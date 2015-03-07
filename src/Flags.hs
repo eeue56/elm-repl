@@ -5,7 +5,7 @@ import Data.Version (showVersion)
 import qualified Paths_elm_repl as This
 import System.Console.CmdArgs
     ( Data, Typeable, (&=), explicit, help, helpArg
-    , name, summary, typFile, versionArg
+    , name, summary, typFile, versionArg, opt
     )
 
 import qualified Elm.Compiler as Compiler
@@ -17,6 +17,7 @@ version = showVersion This.version
 data Flags = Flags
     { compiler :: FilePath
     , interpreter :: FilePath
+    , preserveTemp :: String
     }
     deriving (Data,Typeable,Show,Eq)
 
@@ -29,6 +30,9 @@ flags = Flags
     , interpreter = "node" 
         &= typFile
         &= help "Provide a path to a specific JavaScript interpreter (e.g. node, nodejs, ...)."
+    , preserveTemp = "False" &= opt "True"
+        &= help "True or False, Preserve temporary files"
+        
     }
         &= help helpMessage
 

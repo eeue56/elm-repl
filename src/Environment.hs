@@ -13,6 +13,7 @@ import qualified Input
 data Env = Env
     { compilerPath  :: FilePath
     , interpreterPath :: FilePath
+    , preserveTemp :: Bool
     , flags :: [String]
     , imports :: Trie String
     , adts :: Trie String
@@ -21,10 +22,11 @@ data Env = Env
     deriving Show
 
 
-empty :: FilePath -> FilePath -> Env
-empty compiler interpreter =
+empty :: FilePath -> FilePath -> Bool -> Env
+empty compiler interpreter keepTemp =
     Env compiler
         interpreter
+        keepTemp
         []
         Trie.empty
         Trie.empty
@@ -88,3 +90,6 @@ display body env =
 noDisplay :: Env -> Env
 noDisplay env =
     env { defs = Trie.delete lastVar (defs env) }
+
+removeLastVar :: Env -> Env
+removeLastVar = noDisplay

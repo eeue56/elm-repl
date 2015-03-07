@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Eval.Code (eval) where
 
+import Control.Monad (when)
 import Control.Monad.Cont (ContT(ContT, runContT))
 import Control.Monad.Error (ErrorT, runErrorT, throwError)
 import Control.Monad.RWS (get, modify)
-import Control.Monad.Trans (liftIO)
+import Control.Monad.Trans (liftIO, lift)
 import qualified Data.Binary as Binary
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.List as List
@@ -30,16 +31,29 @@ eval :: (Maybe Input.DefName, String) -> Eval.Command ()
 eval code =
  do modify $ Env.insert code 
     env <- get
+
     liftIO $ writeFile tempElmPath (Env.toElmCode env)
+
     liftIO . runConts $ do
         runCmd (Env.compilerPath env) (Env.flags env ++ elmArgs)
         liftIO $ addNodeRunner tempJsPath
         value <- runCmd (Env.interpreterPath env) [tempJsPath]
-        liftIO $ printIfNeeded value
-        liftIO $ removeIfExists tempElmPath
-        liftIO $ removeIfExists tempJsPath
+        case value of 
+          Just value -> do
+            liftIO $ printIfNeeded value
+            cleanup $ Env.preserveTemp env
+          Nothing -> 
+            cleanup $ Env.preserveTemp env
+
     return ()
   where
+    removeFiles = do
+      liftIO $ removeIfExists tempElmPath
+      liftIO $ removeIfExists tempJsPath
+
+    cleanup keepTemp =
+      when (not keepTemp) $ do removeFiles
+
     runConts m = runContT m (\_ -> return ())
     
     tempElmPath =
@@ -75,18 +89,22 @@ printIfNeeded rawValue =
           putStrLn (value ++ tipeAnnotation)
 
 
-runCmd :: FilePath -> [String] -> ContT () IO String
+runCmd :: FilePath -> [String] -> ContT () IO (Maybe String)
 runCmd name args = ContT $ \ret ->
   do  result <- liftIO (Utils.unwrappedRun name args)
       case result of
-        Right stdout ->
-            ret stdout
+        Right msg ->
+            ret $ Just msg
 
         Left (Utils.MissingExe msg) ->
-            liftIO $ hPutStrLn stderr msg
+            do
+              liftIO $ hPutStrLn stderr msg
+              ret $ Nothing
 
         Left (Utils.CommandFailed out err) ->
-            liftIO $ hPutStrLn stderr (out ++ err)
+            do
+              liftIO $ hPutStrLn stderr (out ++ err)
+              ret $ Nothing
 
 
 addNodeRunner :: String -> IO ()

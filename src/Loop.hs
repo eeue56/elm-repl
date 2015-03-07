@@ -17,7 +17,10 @@ loop flags settings =
     Command.run flags initialEnv $ runInputT settings (withInterrupt acceptInput)
   where
     initialEnv =
-        Env.empty (Flags.compiler flags) (Flags.interpreter flags)
+        Env.empty compiler interpreter preserveTemp 
+    compiler = (Flags.compiler flags)
+    interpreter = (Flags.interpreter flags)
+    preserveTemp = (Flags.preserveTemp flags) /= "False"
 
 
 acceptInput :: InputT Command.Command ExitCode

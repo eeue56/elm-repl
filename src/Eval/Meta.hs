@@ -36,7 +36,7 @@ eval cmd =
 
     Cmd.Reset ->
         modifyAlways "Environment Reset" $ \env ->
-          Env.empty (Env.compilerPath env) (Env.interpreterPath env)
+          Env.empty (Env.compilerPath env) (Env.interpreterPath env) (Env.preserveTemp env)
 
     Cmd.ClearFlags ->
         modifyAlways "All flags cleared" $ \env ->
