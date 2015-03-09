@@ -35,7 +35,7 @@ eval code =
     liftIO $ writeFile tempElmPath (Env.toElmCode env)
 
     liftIO . runConts $ do
-        runCmd (Env.compilerPath env) (Env.flags env ++ elmArgs)
+        runCmd (Env.compilerPath env) (Env.jsFlags env ++ elmArgs)
         liftIO $ addNodeRunner tempJsPath
         value <- runCmd (Env.interpreterPath env) [tempJsPath]
         case value of 

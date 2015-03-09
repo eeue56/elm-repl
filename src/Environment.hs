@@ -9,19 +9,40 @@ import qualified Data.Trie as Trie
 
 import qualified Input
 
+import qualified Flags
+
 
 data Env = Env
     { compilerPath  :: FilePath
     , interpreterPath :: FilePath
     , preserveTemp :: Bool
-    , flags :: [String]
+    , jsFlags :: [String]
     , imports :: Trie String
     , adts :: Trie String
     , defs :: Trie String
     }
     deriving Show
 
+{-
+    Create an empty enviroment from flags
+-}
+createEmptyEnvFromFlags :: Flags.Flags -> Env
+createEmptyEnvFromFlags flags = empty compiler interpreter keepTemp 
+  where
+    compiler = (Flags.compiler flags)
+    interpreter = (Flags.interpreter flags)
+    keepTemp = (Flags.preserveTemp flags) /= "False"
 
+createEnvEmptyFromEnv :: Env -> Env
+createEnvEmptyFromEnv env = empty compiler interpreter keepTemp 
+  where
+    compiler = (compilerPath env )
+    interpreter = (interpreterPath env)
+    keepTemp = (preserveTemp env)
+
+{-
+    Create an empty enviroment from given args 
+-}
 empty :: FilePath -> FilePath -> Bool -> Env
 empty compiler interpreter keepTemp =
     Env compiler
@@ -90,6 +111,7 @@ display body env =
 noDisplay :: Env -> Env
 noDisplay env =
     env { defs = Trie.delete lastVar (defs env) }
+
 
 removeLastVar :: Env -> Env
 removeLastVar = noDisplay

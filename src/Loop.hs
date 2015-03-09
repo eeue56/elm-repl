@@ -16,12 +16,8 @@ loop :: Flags.Flags -> Settings Command.Command -> IO ExitCode
 loop flags settings =
     Command.run flags initialEnv $ runInputT settings (withInterrupt acceptInput)
   where
-    initialEnv =
-        Env.empty compiler interpreter preserveTemp 
-    compiler = (Flags.compiler flags)
-    interpreter = (Flags.interpreter flags)
-    preserveTemp = (Flags.preserveTemp flags) /= "False"
-
+    initialEnv = Env.createEmptyEnvFromFlags flags 
+      
 
 acceptInput :: InputT Command.Command ExitCode
 acceptInput =
@@ -49,6 +45,6 @@ getInput =
               Just new -> continueWith (inputSoFar ++ new)
 
     continueWith inputSoFar =
-        if null inputSoFar || last inputSoFar /= '\\'
+        if null inputSoFar || last inputSoFar /= '\\' 
             then return (Just inputSoFar)
             else go "| " (init inputSoFar ++ "\n")

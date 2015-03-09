@@ -24,23 +24,22 @@ eval cmd =
            display flagsInfo
 
     Cmd.ListFlags ->
-        display . unlines . Env.flags =<< get
+        display . unlines . Env.jsFlags =<< get
 
     Cmd.AddFlag flag ->
         modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
-            env { Env.flags = Env.flags env ++ [flag] }
+            env { Env.jsFlags = Env.jsFlags env ++ [flag] }
 
     Cmd.RemoveFlag flag ->
         modifyIfPresent False flag "Removed flag " "No such flag." $ \env ->
-            env {Env.flags = List.delete flag $ Env.flags env}
+            env {Env.jsFlags = List.delete flag $ Env.jsFlags env}
 
     Cmd.Reset ->
-        modifyAlways "Environment Reset" $ \env ->
-          Env.empty (Env.compilerPath env) (Env.interpreterPath env) (Env.preserveTemp env)
+        modifyAlways "Environment Reset" $ Env.createEnvEmptyFromEnv 
 
     Cmd.ClearFlags ->
         modifyAlways "All flags cleared" $ \env ->
-            env {Env.flags = []}
+            env {Env.jsFlags = []}
 
   where
     display msg =
@@ -54,7 +53,7 @@ eval cmd =
 
     modifyIfPresent b flag msgSuc msgFail mod =
         do env <- get
-           if not b `xor` (flag `elem` Env.flags env)
+           if not b `xor` (flag `elem` Env.jsFlags env)
              then display msgFail
              else do liftIO . putStrLn $ msgSuc ++ flag
                      modify mod
